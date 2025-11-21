@@ -1,103 +1,86 @@
-🚀 Order Execution Engine
+# 🚀 Order Execution Engine  
+![Node](https://img.shields.io/badge/Node.js-18+-green)  
+![Fastify](https://img.shields.io/badge/Fastify-Framework-black)  
+![TypeScript](https://img.shields.io/badge/TypeScript-✓-blue)  
+![BullMQ](https://img.shields.io/badge/BullMQ-Queue-red)  
+![Redis](https://img.shields.io/badge/Redis-Cache-orange)  
+![PostgreSQL](https://img.shields.io/badge/Postgres-Database-blue)  
+![WebSockets](https://img.shields.io/badge/WebSockets-RealTime-purple)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-A real-time order execution engine with DEX routing, WebSocket streaming, Redis queueing, and PostgreSQL persistence.
+A real-time **order execution engine** with DEX routing, WebSocket streaming, Redis queueing, and PostgreSQL persistence.  
 Built to simulate real Solana DEX routing pipelines (Raydium & Meteora) using mock execution.
+Hosted at: https://order-execution-engine-1bnm.onrender.com/
 
-📑 Table of Contents
+---
 
-✨ Features
+## 📑 Table of Contents
+- [✨ Features](#-features)
+- [🎯 Why Market Orders?](#-why-market-orders)
+- [🔁 Order Lifecycle](#-order-lifecycle)
+- [📡 API](#-api)
+- [🔌 WebSocket Events](#-websocket-events)
+- [🧪 Tests](#-tests)
+- [🛠 Tech Stack](#-tech-stack)
+- [🏗 Project Structure](#-project-structure)
+- [🔧 Environment Variables](#-environment-variables)
+- [🚀 Deployment](#-deployment)
+- [📽 Demo Requirements](#-demo-requirements)
+- [🏁 Conclusion](#-conclusion)
 
-🎯 Why Market Orders?
+---
 
-🔁 Order Lifecycle
+## ✨ Features
 
-📡 API
+### ✅ Market Order Execution
+- Submit an order via REST  
+- Receive `orderId`  
+- WebSocket streams real-time updates
 
-🔌 WebSocket Events
+### 🛰 Mock DEX Router (Raydium & Meteora)
+- Simulated quote fetching  
+- Random realistic price variations (2–5%)  
+- Router chooses best venue  
+- Executes mock swap with delay (2–3 sec)  
+- Returns mock txHash + executed price
 
-🧪 Tests
+### 🔁 WebSocket Status Lifecycle
 
-🛠 Tech Stack
-
-🏗 Project Structure
-
-🔧 Environment Variables
-
-🚀 Deployment
-
-📽 Demo Requirements
-
-🏁 Conclusion
-
-✨ Features
-✅ Market Order Execution
-
-Submit an order via REST
-
-Receive orderId
-
-WebSocket streams real-time updates
-
-🛰 Mock DEX Router (Raydium & Meteora)
-
-Simulated quote fetching
-
-Random realistic price variations (2–5%)
-
-Router chooses best venue
-
-Executes mock swap with delay (2–3 sec)
-
-Returns mock txHash + executed price
-
-🔁 WebSocket Status Lifecycle
+```
 pending → routing → building → submitted → confirmed → (or failed)
+```
 
-🔥 BullMQ Queueing (Redis)
+### 🔥 BullMQ Queueing (Redis)
+- Up to **10 concurrent orders**  
+- Handles **100 orders/minute**  
+- **Exponential backoff** (3 retries)  
+- Logs failures for post-mortem
 
-Up to 10 concurrent orders
+### 🗄 PostgreSQL Persistence
+- Order storage  
+- Execution details  
+- Failure reasons  
 
-Handles 100 orders/minute
+---
 
-Exponential backoff (3 retries)
+## 🎯 Why Market Orders?
 
-Logs failures for post-mortem
+✔ Simple to model deterministically  
+✔ Best suited for real-time streaming  
+✔ Clean fit for DEX routing logic  
 
-🗄 PostgreSQL Persistence
-
-Order storage
-
-Execution details
-
-Failure reasons
-
-🎯 Why Market Orders?
-
-✔ Simple to model deterministically
-✔ Best suited for real-time streaming
-✔ Clean fit for DEX routing logic
-
-Extending to Other Order Types
-Order Type	How to Support
-Limit Order	Background price polling, execute when conditions meet
-Sniper Order	Trigger on pool creation/token launch events
+### Extending to Other Order Types
+| Order Type | How to Support |
+|-----------|----------------|
+| **Limit Order** | Background price polling, execute when conditions meet |
+| **Sniper Order** | Trigger on pool creation/token launch events |
 
 The underlying architecture supports both with minimal changes.
 
-🔁 Order Lifecycle
+---
+
+## 🔁 Order Lifecycle
+
+```mermaid
 graph TD
 A[POST /api/orders/execute] --> B[Order saved & queued]
 B --> C[WebSocket connection established]
@@ -108,66 +91,85 @@ D -->|3| G[building transaction]
 D -->|4| H[submitted]
 D -->|5| I[confirmed + txHash]
 D -->|Error| J[failed + reason]
+```
 
-📡 API
-POST /api/orders/execute
+---
 
+## 📡 API
+
+### **POST /api/orders/execute**
 Submit a market order.
 
-Request
+#### Request
+```json
 {
   "tokenIn": "SOL",
   "tokenOut": "USDC",
   "amount": 1
 }
+```
 
-Response
+#### Response
+```json
 {
   "orderId": "cde1291af"
 }
+```
 
+After receiving `orderId`, client switches to WebSocket.
 
-After receiving orderId, client switches to WebSocket.
+---
 
-🔌 WebSocket Events
-Connect:
+## 🔌 WebSocket Events
+
+### Connect:
+```
 wss://<your-app>.onrender.com/ws?orderId=123
+```
 
-Sample Events
+### Sample Events
+```json
 { "status": "pending" }
 { "status": "routing", "bestVenue": "Raydium" }
 { "status": "building" }
 { "status": "submitted" }
 { "status": "confirmed", "txHash": "0xabc123" }
+```
 
-🧪 Tests
+---
 
+## 🧪 Tests
 Includes or expects tests for:
-
-DEX routing logic
-
-Queue behavior
-
-Retry attempts
-
-WebSocket event order
-
-Failure handling
+- DEX routing logic  
+- Queue behavior  
+- Retry attempts  
+- WebSocket event order  
+- Failure handling  
 
 Run tests:
-
+```bash
 npm test
+```
 
-🛠 Tech Stack
-Component	Technology
-Runtime	Node.js
-Framework	Fastify
-Language	TypeScript
-Queue	BullMQ + Redis
-Database	PostgreSQL
-Realtime	WebSockets
-Deployment	Render
-🏗 Project Structure
+---
+
+## 🛠 Tech Stack
+
+| Component | Technology |
+|----------|------------|
+| Runtime | Node.js |
+| Framework | Fastify |
+| Language | TypeScript |
+| Queue | BullMQ + Redis |
+| Database | PostgreSQL |
+| Realtime | WebSockets |
+| Deployment | Render |
+
+---
+
+## 🏗 Project Structure
+
+```
 /src
  ├── server.ts          # Fastify API + WebSockets
  ├── router/            # Mock DEX router (Raydium/Meteora)
@@ -175,52 +177,65 @@ Deployment	Render
  ├── services/          # Order processing
  ├── db/                # Prisma/Postgres models
  ├── utils/             # Helpers (delay, txHash generator)
+```
 
-🔧 Environment Variables
+---
 
-Create a .env:
+## 🔧 Environment Variables
 
+Create a `.env`:
+
+```env
 PORT=3000
-DATABASE_URL=postgres://user:pass@host/db?sslmode=require
-REDIS_URL=rediss://default:password@host:port
+DATABASE_URL=postgres://user:pass@neon-host/db?sslmode=require
+REDIS_URL=rediss://default:password@redis-host:port
 NODE_ENV=production
+```
 
-🚀 Deployment (Render)
-Build
+---
+
+## 🚀 Deployment (Render)
+
+### Build
+```bash
 npm install
+```
 
-Start
+### Start
+```bash
 npm run start
+```
 
-Remember:
-
+### Remember:
 Render WebSockets use:
-
+```
 wss://your-app.onrender.com
+```
 
-📽 Demo Requirements (for recruiters/interview)
+---
+
+## 📽 Demo Requirements
 
 Your video should show:
 
-✔ Submit 3–5 orders
-✔ Show all status updates (pending → confirmed)
-✔ DEX routing choosing best price
-✔ Queue processing multiple orders together
-✔ Retry on failures
-✔ Final txHash printed
+✔ Submit 3–5 orders  
+✔ Show all status updates (`pending → confirmed`)  
+✔ DEX routing logs  
+✔ Queue processing many orders  
+✔ Retry logic  
+✔ Returned txHash  
 
-🏁 Conclusion
+---
+
+## 🏁 Conclusion
 
 This project demonstrates a production-ready backend architecture featuring:
 
-Real-time WebSockets
+- Real-time WebSockets  
+- Queue-based concurrent processing  
+- DEX routing  
+- Robust retry/error handling  
+- Database persistence  
 
-Queue-based concurrent processing
+Ideal foundation for extending to **real Solana devnet** routing.
 
-DEX routing logic
-
-Robust retry/error handling
-
-Database persistence
-
-The same infrastructure can easily be extended to real-world Solana execution using Raydium/Meteora SDKs.
